@@ -13,6 +13,11 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    env:
+      SCAN_PATH: "." # Set the relative path in the repo to build the image from
+      IMAGE_NAME: "hello-world-go"
+      POLICY: "Default vulnerabilities policy" # Set the desired Wiz CLI policy to use
+
     steps:
     - uses: actions/checkout@v4
 
@@ -26,4 +31,19 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t my-go-app .
+        docker build -t $IMAGE_NAME .
+
+    - name: Download Wiz CLI
+      run: curl -o wizcli https://downloads.wiz.io/wizcli/latest/wizcli-linux-amd64 && chmod +x wizcli
+
+    - name: Authenticate to Wiz
+      run: ./wizcli auth --id "$WIZ_CLIENT_ID" --secret "$WIZ_CLIENT_SECRET"
+      env:
+        WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
+        WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
+
+    - name: Run wiz-cli docker image scan
+      run: ./wizcli docker scan --image $IMAGE_NAME --policy "$POLICY"
+
+    - name: Fetch digest of Docker image for Graph enrichment
+      run: ./wizcli docker tag --image $IMAGE_NAME
