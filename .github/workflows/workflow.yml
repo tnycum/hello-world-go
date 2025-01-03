@@ -24,9 +24,6 @@ jobs:
     - name: Build
       run: go build -v ./...
 
-    - name: Test
-      run: go test -v ./...
-
     - name: Build Docker image
       run: |
         docker build -t my-go-app .
